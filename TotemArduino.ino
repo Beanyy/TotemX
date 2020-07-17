@@ -3,6 +3,7 @@
 #include <FastLED.h>
 #include "animations.hpp"
 #include "appState.hpp"
+#include "servoAnimation.hpp"
 
 #define LEDS_INNER 36
 #define LEDS_OUTER 112
@@ -13,6 +14,11 @@ CRGB leds[LEDS_INNER + LEDS_OUTER];
 LedStrip ledsInner(&leds[0], LEDS_INNER);
 LedStrip ledsOuter(&leds[LEDS_INNER], LEDS_OUTER);
 AppState state;
+
+Servo motorInner;
+Servo motorOuter;
+ServoAnimation motorAniInner(83, 90, 97);
+ServoAnimation motorAniOuter(83, 90, 97);
 
 // void sendCommand(const char *cmd)
 // {

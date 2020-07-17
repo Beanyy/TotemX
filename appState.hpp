@@ -1,7 +1,6 @@
 #ifndef APPSTATE_HPP
 #define APPSTATE_HPP
 
-#include "animation.hpp"
 class AppState
 {
 private:
