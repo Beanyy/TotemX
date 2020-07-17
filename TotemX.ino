@@ -4,6 +4,7 @@
 #include "animations.hpp"
 #include "appState.hpp"
 #include "servoAnimation.hpp"
+#include "Servo.h"
 
 #define LEDS_INNER 36
 #define LEDS_OUTER 112
@@ -15,10 +16,10 @@ LedStrip ledsInner(&leds[0], LEDS_INNER);
 LedStrip ledsOuter(&leds[LEDS_INNER], LEDS_OUTER);
 AppState state;
 
-Servo motorInner;
-Servo motorOuter;
-ServoAnimation motorAniInner(83, 90, 97);
-ServoAnimation motorAniOuter(83, 90, 97);
+Servo motorFront;
+Servo motorBack;
+ServoAnimation motorAniFront(88, 93, 97);
+ServoAnimation motorAniBack(79, 87, 93);
 
 // void sendCommand(const char *cmd)
 // {
@@ -40,7 +41,7 @@ void executeCommand(char *cmd)
 
 void parseCommand()
 {
-	static char cmd[128];
+	static char cmd[16];
 	static int i = 0;
 	bool cmdValid = false;
 	while (Serial1.available()) {
@@ -48,7 +49,7 @@ void parseCommand()
 		if (cmd[i] == '@') {
 			cmd[i] = 0;
 			i = 0;
-			executeCommand(cmd)
+			executeCommand(cmd);
 			return;
 		}
 		i++;
@@ -66,10 +67,11 @@ struct AnimationList
 {
 	int count;
 	int current;
-	Animation animation[NUM_ANIMATIONS];
-	enum AnimationMode mode[NUM_ANIMATIONS];
+	Animation* animation[NUM_ANIMATIONS];
+	AnimationMode mode[NUM_ANIMATIONS];
 } aniList;
 
+void registerAnimation(Animation* ani, enum AnimationMode mode);
 void registerAnimation(Animation* ani, enum AnimationMode mode)
 {
 	aniList.animation[aniList.count] = ani;
@@ -96,6 +98,9 @@ void setup()
 
 	curTime = millis();
 	lastSwapTime = curTime;
+
+  motorFront.attach(PA1);
+  motorBack.attach(PA0);
 }
 
 int getLoopAnimation() {
@@ -149,9 +154,17 @@ void loop()
 			runAnimation(aniList.animation[a]);
 	}
 
-	for (int i = 0; i < NUM_LEDS; i++)
+	for (int i = 0; i < LEDS_INNER + LEDS_OUTER; i++)
 		strip.setPixelColor(i, strip.Color(leds[i].r, leds[i].g, leds[i].b));
 	strip.show();
+
+  unsigned char eddy1 = motorAniFront.Draw(curTime);
+  unsigned char eddy2 = motorAniBack.Draw(curTime);
+  motorFront.write(eddy1);
+  motorBack.write(eddy2);
+  Serial.println("eddy");
+  Serial.println(eddy1);
+  Serial.println(eddy2);
 
 	unsigned long duration = millis() - curTime;
 	if (duration < minDelay)

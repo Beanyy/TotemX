@@ -1,8 +1,6 @@
 #ifndef HELPERS_HPP
 #define HELPERS_HPP
 
-#include "geometry.hpp"
-
 #ifdef SIMULATOR
 #include <stdint.h>
 #include <cstring>
@@ -33,6 +31,6 @@ uint16_t lerp16by8(uint16_t from, uint16_t to, uint8_t frac);
 #endif
 
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max);
-void rotateZ(float rad, float vec[3]);
-float getDistance(Position a, Position b);
+float mapFloatRev(float x, float in_min, float in_max, float out_min, float out_max);
+float mapFloatDual(float x, float in_min, float in_max, float out_min, float out_max);
 #endif

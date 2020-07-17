@@ -39,7 +39,6 @@ public:
 	virtual void Draw(LedStrip* strip) override;
 };
 
-template <class T>
 class EffectRainbow : public EffectStrip
 {
 public:
@@ -48,5 +47,14 @@ public:
 	}
 	int mode;
 	virtual void Draw(LedStrip* strip) override;
+};
+
+class EffectFlash : public EffectStrip
+{
+public:
+  EffectFlash() {
+    this->duration = 10000;
+  }
+  virtual void Draw(LedStrip* strip) override;
 };
 #endif

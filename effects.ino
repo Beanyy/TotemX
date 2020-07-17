@@ -1,7 +1,7 @@
 #include "effects.hpp"
 #include "helpers.hpp"
 
-void AniParticle::Draw(LedStrip *strip)
+void EffectParticle::Draw(LedStrip *strip)
 {
     int p = this->Progress();
 
@@ -11,7 +11,7 @@ void AniParticle::Draw(LedStrip *strip)
     strip->SetDir(true).SetOffset(offset).SetWrap(true).SetViewport(0, strip->Size()).DrawStreak(streakSize, hue + hueOffset, false, 255);
 }
 
-void AniRainbow::Draw(LedStrip *strip)
+void EffectRainbow::Draw(LedStrip *strip)
 {
     strip->SetDir(true).SetOffset(0).SetWrap(false).SetViewport(0, strip->Size());
     int hueOffset = mapFloat(this->Progress(), 0, this->duration, 0, 255);
@@ -21,7 +21,7 @@ void AniRainbow::Draw(LedStrip *strip)
         strip->DrawRandom(3);
 }
 
-void AniTheater::Draw(LedStrip *strip)
+void EffectTheater::Draw(LedStrip *strip)
 {
     const int skip = 3;
     int idx = (this->Progress() / 50) % skip;
@@ -30,7 +30,7 @@ void AniTheater::Draw(LedStrip *strip)
         strip->SetLED(i, this->color);
 }
 
-void AniFlash::Draw(LedStrip *strip)
+void EffectFlash::Draw(LedStrip *strip)
 {
     const int onDuration = 50;
     const int nSegments = 12;
@@ -53,7 +53,7 @@ void AniFlash::Draw(LedStrip *strip)
     }
 }
 
-void AniWipe::Draw(LedStrip *strip)
+void EffectWipe::Draw(LedStrip *strip)
 {
     float offset = mapFloat(this->Progress(), 0, this->duration, 0, strip->Size());
     if (invert)

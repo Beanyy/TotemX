@@ -10,6 +10,7 @@ void AniWipe::DrawImpl(unsigned long time)
 		hue += 144;
 
 	lastProgress = progress;
+  wipe.color = CHSV(hue, 255, 100);
 	wipe.invert = 0;
 	wipe.Draw(inner);
     wipe.Draw(outer);

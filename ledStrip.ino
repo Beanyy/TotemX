@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #endif
 
-template <class T> static bool InRange(T in, T lower, T upper)
+static bool InRange(int in, int lower, int upper)
 {
     return (in >= lower && in < upper);
 }
@@ -89,7 +89,7 @@ LedStrip &LedStrip::SetLED(int pos, CRGB color)
             element += nLeds;
     }
 
-    if (!InRange<int>(element, 0, nLeds))
+    if (!InRange(element, 0, nLeds))
         return *this;
 
     int frac = CalcViewport(element);
