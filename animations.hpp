@@ -3,22 +3,38 @@
 #include "animationBase.hpp"
 #include "effects.hpp"
 
-class AniWipe : public Animation {
+class AniWipe : public Animation
+{
 private:
     EffectWipe wipe;
-    LedStrip* inner;
-    LedStrip* outer;
+    LedStrip *inner;
+    LedStrip *outer;
     unsigned char hue = HUE_GREEN;
     int lastProgress = 0;
 
 public:
-    AniWipe(LedStrip *inner, LedStrip *outer):
-        inner(inner),
-        outer(outer) 
+    AniWipe(LedStrip *inner, LedStrip *outer) : inner(inner),
+                                                outer(outer)
     {
         this->AddEffect(&wipe);
     }
-	virtual void DrawImpl(unsigned long time) override;
+    virtual void DrawImpl(unsigned long time) override;
+};
+
+class AniFlash : public Animation
+{
+private:
+    EffectFlash flash;
+    LedStrip *inner;
+    LedStrip *outer;
+
+public:
+    AniFlash(LedStrip *inner, LedStrip *outer) : inner(inner),
+                                                outer(outer)
+    {
+        this->AddEffect(&flash);
+    }
+    virtual void DrawImpl(unsigned long time) override;
 };
 
 #endif

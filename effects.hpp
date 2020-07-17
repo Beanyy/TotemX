@@ -54,7 +54,9 @@ class EffectFlash : public EffectStrip
 public:
   EffectFlash() {
     this->duration = 10000;
+	seed = 10;
   }
+  int seed;
   virtual void Draw(LedStrip* strip) override;
 };
 #endif

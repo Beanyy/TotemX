@@ -31,8 +31,10 @@ void AppState::Reset()
 void AppState::Update(char *cmd)
 {
     int value = strtol(&cmd[1], NULL, 10);
-    for (int i = 0; i < nModifiers; i++) {
-        if (cmd[0] == modifiers[i].cmd) {
+    for (int i = 0; i < nModifiers; i++)
+    {
+        if (cmd[0] == modifiers[i].cmd)
+        {
             memcpy(modifiers[i].value, &value, modifiers[i].size);
             return;
         }

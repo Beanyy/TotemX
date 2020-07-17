@@ -2,11 +2,13 @@
 #define ANIMATIONBASE_HPP
 #include "effectBase.hpp"
 
-class Animation {
+class Animation
+{
 private:
     Effect *effects[3];
     int nEffects = 0;
-    enum State {
+    enum State
+    {
         Running = 0,
         Paused = 1
     } state = Running;
@@ -14,8 +16,10 @@ private:
 public:
     virtual void DrawImpl(unsigned long time) = 0;
 
-    void Draw(unsigned long time) {
-        if (state == Paused) {
+    void Draw(unsigned long time)
+    {
+        if (state == Paused)
+        {
             for (int i = 0; i < nEffects; i++)
                 effects[i]->lastTime = time;
             return;
@@ -25,18 +29,21 @@ public:
         DrawImpl(time);
     }
 
-    void AddEffect(Effect *effect) {
+    void AddEffect(Effect *effect)
+    {
         effects[nEffects] = effect;
         nEffects++;
     }
 
     void Pause() { state = Paused; }
     void Resume() { state = Running; }
-    void ColorOverride(CHSV color) {
+    void ColorOverride(CHSV color)
+    {
         for (int i = 0; i < nEffects; i++)
             effects[i]->color = color;
     }
-    void SpeedOverride(float speed) {
+    void SpeedOverride(float speed)
+    {
         for (int i = 0; i < nEffects; i++)
             effects[i]->speed = speed;
     }

@@ -32,5 +32,4 @@ public:
 	int Progress();
 };
 
-
 #endif

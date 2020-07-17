@@ -6,20 +6,22 @@
 #include <cstring>
 #endif
 
-#define swap(x,y) do \
-   { unsigned char swap_temp[sizeof(x) == sizeof(y) ? (signed)sizeof(x) : -1]; \
-     memcpy(swap_temp,&y,sizeof(x)); \
-     memcpy(&y,&x,       sizeof(x)); \
-     memcpy(&x,swap_temp,sizeof(x)); \
-    } while(0)
+#define swap(x, y)                                                            \
+  do                                                                          \
+  {                                                                           \
+    unsigned char swap_temp[sizeof(x) == sizeof(y) ? (signed)sizeof(x) : -1]; \
+    memcpy(swap_temp, &y, sizeof(x));                                         \
+    memcpy(&y, &x, sizeof(x));                                                \
+    memcpy(&x, swap_temp, sizeof(x));                                         \
+  } while (0)
 
 #ifdef SIMULATOR
 #define max(a, b) \
-    ({ __typeof__ (a) _a = (a); \
+  ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \
      _a > _b ? _a : _b; })
 #define min(a, b) \
-    ({ __typeof__ (a) _a = (a); \
+  ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \
      _a < _b ? _a : _b; })
 
@@ -31,6 +33,4 @@ uint16_t lerp16by8(uint16_t from, uint16_t to, uint8_t frac);
 #endif
 
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max);
-float mapFloatRev(float x, float in_min, float in_max, float out_min, float out_max);
-float mapFloatDual(float x, float in_min, float in_max, float out_min, float out_max);
 #endif

@@ -42,14 +42,14 @@ void EffectFlash::Draw(LedStrip *strip)
     fadeToBlackBy(strip->Leds(), strip->Size(), 10);
 
     strip->SetDir(true).SetWrap(false);
-    srand(10);
+    srand(seed);
     for (int i = 0; i < nFlashes; i++) {
         for (int i = 0; i < offset; i++)
             segment = rand() % nSegments;
         
         int ledOffset = segment * stripSize;
         strip->SetOffset(ledOffset).SetViewport(ledOffset, stripSize);
-        strip->DrawColor(CHSV(offset * 144 + 256/nFlashes  * i, 255, 100));
+        strip->DrawColor(CHSV(offset * 144 + 256/nFlashes  * i, 255, 255));
     }
 }
 
