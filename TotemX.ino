@@ -18,8 +18,7 @@ AppState state;
 
 Servo motorFront;
 Servo motorBack;
-ServoAnimation motorAniFront(88, 93, 97);
-ServoAnimation motorAniBack(79, 87, 93);
+DualServoAnimation servoAnimation(88, 97, 77, 93);
 
 // void sendCommand(const char *cmd)
 // {
@@ -85,7 +84,6 @@ unsigned long curTime;
 unsigned long lastSwapTime;
 AniWipe aniWipe(&ledsInner, &ledsOuter);
 AniFlash aniFlash(&ledsInner, &ledsOuter);
-
 
 void setup()
 {
@@ -172,8 +170,9 @@ void loop()
 
 	// unsigned char eddy1 = motorAniFront.Draw(curTime);
 	// unsigned char eddy2 = motorAniBack.Draw(curTime);
-	// motorFront.write(eddy1);
-	// motorBack.write(eddy2);
+	servoAnimation.Draw(curTime);
+	motorFront.write(servoAnimation.val[0]);
+	motorBack.write(servoAnimation.val[1]);
 
 	unsigned long duration = millis() - curTime;
 	if (duration < minDelay)

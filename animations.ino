@@ -1,3 +1,4 @@
+#include <FastLED.h>
 #include "animations.hpp"
 
 void AniWipe::DrawImpl(unsigned long time)
@@ -23,8 +24,6 @@ void AniWipe::DrawImpl(unsigned long time)
 
 void AniFlash::DrawImpl(unsigned long time)
 {
-	// inner->Clear();
-	// outer->Clear();
 	flash.seed = 10;
 	flash.Draw(outer);
 	flash.seed = 11;

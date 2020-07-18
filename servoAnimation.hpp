@@ -3,94 +3,64 @@
 
 #include "helpers.hpp"
 
-class ServoAnimation
+class SingleServoAnimation
 {
 private:
-    unsigned char leftPoint;
-    unsigned char zeroPoint;
-    unsigned char rightPoint;
-
-public:
     enum State
     {
-        Zero,
         LeftHold,
         RightHold,
         LeftTrans,
-        RightTrans
+        RightTrans,
     } state;
-    enum State getNextState()
-    {
-        enum State targetState = (rand() % 5) ? LeftHold : RightHold;
-        switch (state)
-        {
-        case Zero:
-            return (targetState == LeftHold) ? LeftTrans : RightTrans;
-        case RightTrans:
-            return RightHold;
-        case LeftTrans:
-            return LeftHold;
-        case RightHold:
-            return (targetState == LeftHold) ? LeftTrans : RightHold;
-        case LeftHold:
-            return (targetState == LeftHold) ? LeftHold : RightTrans;
-        }
-    }
+    void SetState(enum State target);
+    int leftPoint;
+    int rightPoint;
     unsigned long lastStateChange;
-    ServoAnimation(unsigned char leftPoint, unsigned char zeroPoint, unsigned char rightPoint) : leftPoint(leftPoint),
-                                                                                                 rightPoint(rightPoint),
-                                                                                                 zeroPoint(zeroPoint)
+    bool newState;
+
+public:
+    SingleServoAnimation(int leftPoint, int rightPoint) : leftPoint(leftPoint),
+                                                          rightPoint(rightPoint),
+                                                          state(LeftHold),
+                                                          newState(true)
     {
-        state = Zero;
     }
 
-    unsigned char Draw(unsigned long time)
+    unsigned char Draw(unsigned long time);
+    void Left()
     {
-        enum State nextState = state;
-        unsigned long progress = time - lastStateChange;
-        unsigned char value = zeroPoint;
-        bool stateChange = false;
-
-        if (state == Zero)
-        {
-            stateChange = true;
-        }
-        else if (state == LeftHold || state == RightHold)
-        {
-            value = (state == LeftHold) ? leftPoint : rightPoint;
-            if (progress > 7000)
-                stateChange = true;
-        }
-        else if (state == LeftTrans || state == RightTrans)
-        {
-            unsigned char beginExtent = (state == LeftTrans) ? rightPoint : leftPoint;
-            unsigned char midPeak = (state == LeftTrans) ? leftPoint - 4 : rightPoint + 4;
-            unsigned char endExtent = (state == LeftTrans) ? leftPoint : rightPoint;
-
-            if (progress < 2000)
-            {
-                value = mapFloat(progress, 0, 2000, beginExtent, midPeak);
-            }
-            else if (progress < 2500)
-            {
-                value = mapFloat(progress, 2000, 2500, midPeak, endExtent);
-            }
-            else
-            {
-                stateChange = true;
-                value = endExtent;
-            }
-        }
-
-        if (stateChange)
-        {
-            lastStateChange = time;
-            if (state == Zero)
-                lastStateChange -= 2500;
-            state = getNextState();
-        }
-        return value;
+        if (state != LeftHold)
+            SetState(LeftTrans);
+    }
+    void Right()
+    {
+        if (state != RightHold)
+            SetState(RightTrans);
     }
 };
+class DualServoAnimation
+{
+private:
+    enum State
+    {
+        Left,
+        Right,
+        CounterLeft,
+        CounterRight
+    } state;
+    void Transition();
+    SingleServoAnimation front;
+    SingleServoAnimation back;
+    unsigned long lastStateChange;
 
+public:
+    DualServoAnimation(int leftFront, int rightFront, int leftBack, int rightBack) : front{leftFront, rightFront},
+                                                                                     back{leftBack, rightBack}
+    {
+        lastStateChange = 0;
+    }
+    void Draw(unsigned long time);
+    unsigned char val[2];
+};
 #endif
