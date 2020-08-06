@@ -18,7 +18,7 @@ public:
 	int duration; //Try to make this a number with many factors.
 	int progessOffset;
 	float speed;
-	CHSV color;
+	CRGB color;
 
 	Effect() : duration(0),
 			   speed(1.0f)

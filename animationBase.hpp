@@ -35,14 +35,18 @@ public:
         nEffects++;
     }
 
-    void Pause() { state = Paused; }
-    void Resume() { state = Running; }
-    void ColorOverride(CHSV color)
+    void Pause() {
+        state = Paused;
+    }
+    void Resume() {
+        state = Running;
+    }
+    void ColorOverride(CRGB color)
     {
         for (int i = 0; i < nEffects; i++)
             effects[i]->color = color;
     }
-    void SpeedOverride(float speed)
+    void SetSpeed(float speed)
     {
         for (int i = 0; i < nEffects; i++)
             effects[i]->speed = speed;

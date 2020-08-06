@@ -2,21 +2,21 @@
 #include <WS2812B.h>
 #include <FastLED.h>
 #include "animations.hpp"
-#include "appState.hpp"
+#include "dataDict.hpp"
 #include "servoAnimation.hpp"
 #include "Servo.h"
 
-#define MOTOR_DISABLE
+//#define MOTOR_DISABLE
 #define LEDS_INNER 36
 #define LEDS_OUTER 112
-#define NUM_ANIMATIONS 1
+#define NUM_ANIMATIONS 7
 
 WS2812B strip = WS2812B(LEDS_INNER + LEDS_OUTER);
 CRGB leds[LEDS_INNER + LEDS_OUTER];
 LedStrip ledsInner(&leds[0], LEDS_INNER);
 LedStrip ledsOuter(&leds[LEDS_INNER], LEDS_OUTER);
 LedStrip ledsAll(&leds[0], LEDS_OUTER + LEDS_INNER);
-AppState state;
+DataDict stateMutator;
 
 Servo motorFront;
 Servo motorBack;
@@ -31,13 +31,59 @@ DualServoAnimation servoAnimation(88, 97, 75, 95);
 // 		Serial.write(Serial1.read());
 // 	}
 // }
+
+struct AppState {
+	CRGB color;
+	int animation;
+	int speed;
+	int off;
+	int pause;
+	int colorOverride;
+	int rotationOverride;
+	int frontSpeed;
+	int backSpeed;
+} state;
+
+void ResetAppState()
+{
+	stateMutator.AddEntry('C', sizeof(state.color), &state.color);
+	stateMutator.AddEntry('a', sizeof(state.animation), &state.animation);
+	stateMutator.AddEntry('s', sizeof(state.speed), &state.speed);
+	stateMutator.AddEntry('c', sizeof(state.colorOverride), &state.colorOverride);
+	stateMutator.AddEntry('x', sizeof(state.rotationOverride), &state.rotationOverride);
+	stateMutator.AddEntry('o', sizeof(state.off), &state.off);
+	stateMutator.AddEntry('p', sizeof(state.pause), &state.pause);
+	stateMutator.AddEntry('f', sizeof(state.frontSpeed), &state.frontSpeed);
+	stateMutator.AddEntry('b', sizeof(state.backSpeed), &state.backSpeed);
+
+	state.color = CRGB(CHSV(93, 255, 20));
+	state.animation = -1;
+	state.speed = 128;
+	state.rotationOverride = 0;
+	state.colorOverride = 0;
+	state.off = 0;
+	state.pause = 0;
+	state.frontSpeed = 90;
+	state.backSpeed = 90;
+	return;
+}
+
 void executeCommand(char *cmd)
 {
+	void *data;
 	Serial.println(cmd);
-	if (cmd[0] == 'r')
-		state.Reset();
-	else
-		state.Update(cmd);
+	if (cmd[0] == 'r') {
+		ResetAppState();
+	}
+	else if (cmd[0] == 'C') {
+		long hexColor = strtol(&cmd[1], NULL, 16);
+		CRGB color = CRGB(hexColor & 0xFF, hexColor & 0xFF00 >> 8, hexColor & 0xFF0000 >> 16);
+		stateMutator.SetEntry(cmd[0], &color);
+	}
+	else {
+		int value = strtol(&cmd[1], NULL, 10);
+		stateMutator.SetEntry(cmd[0], &value);
+	}
 }
 
 void parseCommand()
@@ -74,6 +120,7 @@ struct AnimationList
 	AnimationMode mode[NUM_ANIMATIONS];
 } aniList;
 
+// This is intentional. Fixes a compilation error.
 void registerAnimation(Animation *ani, enum AnimationMode mode);
 void registerAnimation(Animation *ani, enum AnimationMode mode)
 {
@@ -103,16 +150,23 @@ void setup()
 	aniList.current = 0;
 	for (int i = 0; i < NUM_ANIMATIONS; i++)
 		aniList.animation[i] = NULL;
-	//registerAnimation(&aniFlash, MODE_EXTEND);
+	//REMEMBER TO UPDATE NUM_ANIMATIONS
+	registerAnimation(&aniWipe, MODE_EXTEND);
+	registerAnimation(&aniFlash, MODE_EXTEND);
+	registerAnimation(&aniParticle, MODE_EXTEND);
 	registerAnimation(&aniZoom, MODE_EXTEND);
+	registerAnimation(&aniRainbow, MODE_EXTEND);
+	registerAnimation(&aniSparkle, MODE_EXTEND);
+	registerAnimation(&aniConfetti, MODE_EXTEND);
 
 	curTime = millis();
 	lastSwapTime = curTime;
 
-#ifndef MOTOR_DISABLE
+	#ifndef MOTOR_DISABLE
 	motorFront.attach(PA1);
 	motorBack.attach(PA0);
-#endif
+	#endif
+	ResetAppState();
 }
 
 int getLoopAnimation()
@@ -137,14 +191,12 @@ void runAnimation(Animation *a)
 	if (state.colorOverride)
 		a->ColorOverride(state.color);
 
-	if (state.motionOverride)
-		a->SpeedOverride(state.speed);
-
 	if (state.pause)
 		a->Pause();
 	else
 		a->Resume();
 
+	a->SetSpeed((float)state.speed/128.0f);
 	a->Draw(curTime);
 }
 
@@ -166,11 +218,17 @@ void loop()
 	}
 	strip.show();
 
-#ifndef MOTOR_DISABLE
-	servoAnimation.Draw(curTime);
-	motorFront.write(servoAnimation.val[0]);
-	motorBack.write(servoAnimation.val[1]);
-#endif
+	#ifndef MOTOR_DISABLE
+	if (state.rotationOverride) {
+		motorFront.write(state.frontSpeed);
+		motorBack.write(state.backSpeed);
+	}
+	else {
+		servoAnimation.Draw(curTime);
+		motorFront.write(servoAnimation.val[0]);
+		motorBack.write(servoAnimation.val[1]);
+	}
+	#endif
 
 	unsigned long duration = millis() - curTime;
 	if (duration < minDelay)
