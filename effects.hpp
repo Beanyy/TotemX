@@ -13,9 +13,12 @@ class EffectParticle : public EffectStrip
 public:
 	int streakSize;
 	unsigned char hue;
-	bool colorCycle;
+	unsigned char hueBegin;
+	bool reverse;
+	bool gradient;
 	EffectParticle() {
-		this->duration = 80000;
+		this->duration = 2000;
+		reverse = false;
 	}
 	virtual void Draw(LedStrip* strip) override;
 };
@@ -33,9 +36,10 @@ class EffectWipe : public EffectStrip
 {
 public:
 	EffectWipe() {
-		this->duration = 5000;
+		this->duration = 1000;
 	}
 	char invert;
+	int ledOffset;
 	virtual void Draw(LedStrip* strip) override;
 };
 
@@ -54,9 +58,18 @@ class EffectFlash : public EffectStrip
 public:
   EffectFlash() {
     this->duration = 10000;
-	seed = 10;
   }
   int seed;
+  virtual void Draw(LedStrip* strip) override;
+};
+
+class EffectBreathe : public EffectStrip
+{
+public:
+  EffectBreathe() {
+    this->duration = 2000;
+  }
+  unsigned char hue;
   virtual void Draw(LedStrip* strip) override;
 };
 #endif

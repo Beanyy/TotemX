@@ -5,10 +5,12 @@ void EffectParticle::Draw(LedStrip *strip)
 {
     int p = this->Progress();
 
-    int offset = mapFloat(p, 0, this->duration, 0, this->duration / 25);
-    int hueOffset = colorCycle ? mapFloat(p, 0, this->duration, 0, 255) : 0;
-
-    strip->SetDir(true).SetOffset(offset).SetWrap(true).SetViewport(0, strip->Size()).DrawStreak(streakSize, hue + hueOffset, false, 255);
+    int offset = mapFloat(p, 0, this->duration, 0, strip->Size());
+    strip->SetDir(reverse).SetOffset(offset).SetWrap(true).SetViewport(0, strip->Size());
+    if (gradient)
+        strip->DrawGradient(hueBegin, hue, streakSize);
+    else
+        strip->DrawStreak(streakSize, hue, reverse, 255);
 }
 
 void EffectRainbow::Draw(LedStrip *strip)
@@ -18,7 +20,7 @@ void EffectRainbow::Draw(LedStrip *strip)
     if (!mode)
         strip->DrawColor(CHSV(hueOffset, 255, 100));
     else
-        strip->DrawRandom(3);
+        strip->DrawRandom(10);
 }
 
 void EffectTheater::Draw(LedStrip *strip)
@@ -60,5 +62,13 @@ void EffectWipe::Draw(LedStrip *strip)
         strip->SetViewport(offset, strip->Size() - offset);
     else
         strip->SetViewport(0, offset);
-    strip->SetDir(true).SetOffset(0).SetWrap(false).DrawColor(this->color);
+    strip->SetDir(true).SetOffset(0).SetWrap(true).DrawColor(this->color);
+}
+
+void EffectBreathe::Draw(LedStrip *strip)
+{
+    int brightness = mapFloat(this->Progress(), 0, this->duration, 0, 511);
+    if (brightness > 255) 
+        brightness = 512 - brightness;
+    strip->SetDir(true).SetOffset(0).SetWrap(false).SetViewport(0, strip->Size()).DrawColor(CHSV(hue, 255, brightness));
 }

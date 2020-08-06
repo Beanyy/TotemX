@@ -6,6 +6,7 @@
 #include "servoAnimation.hpp"
 #include "Servo.h"
 
+#define MOTOR_DISABLE
 #define LEDS_INNER 36
 #define LEDS_OUTER 112
 #define NUM_ANIMATIONS 1
@@ -14,11 +15,12 @@ WS2812B strip = WS2812B(LEDS_INNER + LEDS_OUTER);
 CRGB leds[LEDS_INNER + LEDS_OUTER];
 LedStrip ledsInner(&leds[0], LEDS_INNER);
 LedStrip ledsOuter(&leds[LEDS_INNER], LEDS_OUTER);
+LedStrip ledsAll(&leds[0], LEDS_OUTER + LEDS_INNER);
 AppState state;
 
 Servo motorFront;
 Servo motorBack;
-DualServoAnimation servoAnimation(88, 97, 77, 93);
+DualServoAnimation servoAnimation(88, 97, 75, 95);
 
 // void sendCommand(const char *cmd)
 // {
@@ -43,9 +45,9 @@ void parseCommand()
 	static char cmd[16];
 	static int i = 0;
 	bool cmdValid = false;
-	while (Serial1.available())
+	while (Serial2.available())
 	{
-		cmd[i] = Serial1.read();
+		cmd[i] = Serial2.read();
 		if (cmd[i] == '@')
 		{
 			cmd[i] = 0;
@@ -84,11 +86,16 @@ unsigned long curTime;
 unsigned long lastSwapTime;
 AniWipe aniWipe(&ledsInner, &ledsOuter);
 AniFlash aniFlash(&ledsInner, &ledsOuter);
+AniParticle aniParticle(&ledsInner, &ledsOuter);
+AniZoom aniZoom(&ledsInner, &ledsOuter);
+AniRainbow aniRainbow(&ledsInner, &ledsOuter);
+AniSparkle aniSparkle(&ledsAll);
+AniConfetti aniConfetti(&ledsAll);
 
 void setup()
 {
 	Serial.begin(9600);
-	Serial1.begin(9600);
+	Serial2.begin(9600);
 	strip.begin(); // Sets up the SPI
 	strip.show();  // Clears the strip, as by default the strip data is set to all LED's off.
 
@@ -96,13 +103,16 @@ void setup()
 	aniList.current = 0;
 	for (int i = 0; i < NUM_ANIMATIONS; i++)
 		aniList.animation[i] = NULL;
-	registerAnimation(&aniFlash, MODE_EXTEND);
+	//registerAnimation(&aniFlash, MODE_EXTEND);
+	registerAnimation(&aniZoom, MODE_EXTEND);
 
 	curTime = millis();
 	lastSwapTime = curTime;
 
+#ifndef MOTOR_DISABLE
 	motorFront.attach(PA1);
 	motorBack.attach(PA0);
+#endif
 }
 
 int getLoopAnimation()
@@ -140,39 +150,27 @@ void runAnimation(Animation *a)
 
 void loop()
 {
-	//  Accept BT Commands for setup
-	//  while (Serial.available()) {
-	//    cmd = Serial.readString();
-	//    Serial.write(cmd.c_str());
-	//    Serial.write("\n");
-	//    sendCommand(cmd.c_str());
-	//  }
-
 	int minDelay = 16;
 	curTime = millis();
 	parseCommand();
 
-	if (state.off)
-	{
-		ledsInner.Clear();
-		ledsOuter.Clear();
-	}
-	else
-	{
-		int a = (state.animation == -1) ? getLoopAnimation() : state.animation;
-		if (a < NUM_ANIMATIONS && aniList.animation[a])
-			runAnimation(aniList.animation[a]);
-	}
+	int a = (state.animation == -1) ? getLoopAnimation() : state.animation;
+	if (a < NUM_ANIMATIONS && aniList.animation[a])
+		runAnimation(aniList.animation[a]);
 
-	for (int i = 0; i < LEDS_INNER + LEDS_OUTER; i++)
-		strip.setPixelColor(i, strip.Color(leds[i].r, leds[i].g, leds[i].b));
+	for (int i = 0; i < LEDS_INNER + LEDS_OUTER; i++) {
+		if (!state.off)
+			strip.setPixelColor(i, strip.Color(leds[i].r, leds[i].g, leds[i].b));
+		else
+			strip.setPixelColor(i, strip.Color(0, 0, 0));
+	}
 	strip.show();
 
-	// unsigned char eddy1 = motorAniFront.Draw(curTime);
-	// unsigned char eddy2 = motorAniBack.Draw(curTime);
+#ifndef MOTOR_DISABLE
 	servoAnimation.Draw(curTime);
 	motorFront.write(servoAnimation.val[0]);
 	motorBack.write(servoAnimation.val[1]);
+#endif
 
 	unsigned long duration = millis() - curTime;
 	if (duration < minDelay)

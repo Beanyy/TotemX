@@ -136,10 +136,13 @@ LedStrip &LedStrip::DrawColor(CRGB color)
 
 LedStrip &LedStrip::DrawGradient(uint16_t hueStart, uint16_t hueEnd, int size)
 {
+    if (hueStart > hueEnd)
+        hueEnd += 255;
+        
     for (int i = 0; i < size; i++)
     {
         uint8_t hue = lerp16by8(hueStart, hueEnd, 255 * i / (size - 1));
-        SetLED(i, CHSV(hue, 255, 100));
+        SetLED(i, CHSV(hue, 255, 255));
     }
     return *this;
 }
