@@ -72,3 +72,23 @@ void EffectBreathe::Draw(LedStrip *strip)
         brightness = 512 - brightness;
     strip->SetDir(true).SetOffset(0).SetWrap(false).SetViewport(0, strip->Size()).DrawColor(CHSV(hue, 255, brightness));
 }
+
+#define PI 3.1415926535
+void EffectServoSine::Draw(DCMotor* motor)
+{
+    int radians = mapFloat(this->Progress(), 0, this->duration, 0, PI*2);
+    float firstTransitionPoint = this->duration / 4;
+    float holdPoint = this->duration / 2;
+    float secondTransitionPoint = this->duration * 3 / 4;
+    motor->SetSpeed(-20);
+
+    // if (this->Progress()  < firstTransitionPoint) {
+    //     motor->SetSpeed(255);
+    // } else if (this->Progress()  < holdPoint){
+    //     motor->SetSpeed(mapFloat(this->Progress(), firstTransitionPoint, holdPoint, 255, -255));
+    // } else if (this->Progress()  < secondTransitionPoint){
+    //     motor->SetSpeed(-255);
+    // } else {
+    //     motor->SetSpeed(mapFloat(this->Progress(), secondTransitionPoint, this->duration, -255, 255));
+    // }
+}

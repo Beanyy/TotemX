@@ -129,6 +129,18 @@ public:
     virtual void DrawImpl(unsigned long time) override;
 };
 
+class AniServo : public Animation
+{
+private:
+    EffectServoSine sineWave;
+    DCMotor *motor;
 
+public:
+    AniServo(DCMotor *motor) : motor(motor)
+    {
+        this->AddEffect(&sineWave);
+    }
+    virtual void DrawImpl(unsigned long time) override;
+};
 
 #endif

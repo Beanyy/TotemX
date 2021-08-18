@@ -1,7 +1,23 @@
 #ifndef EFFECTS_HPP
 #define EFFECTS_HPP
 #include "effectBase.hpp"
+#include "DCMotor.hpp"
 #define BPM128 1875
+
+class EffectServo : public Effect
+{
+public:
+	virtual void Draw(DCMotor* motor) = 0;
+};
+
+class EffectServoSine : public EffectServo
+{
+public:
+	EffectServoSine() {
+		this->duration = BPM128*8;
+	}
+	virtual void Draw(DCMotor* motor) override;
+};
 
 class EffectStrip : public Effect
 {

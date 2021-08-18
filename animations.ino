@@ -114,3 +114,8 @@ void AniRainbow::DrawImpl(unsigned long time)
 		particle.Draw(inner);
 	}
 }
+
+void AniServo::DrawImpl(unsigned long time)
+{
+	sineWave.Draw(motor);
+}

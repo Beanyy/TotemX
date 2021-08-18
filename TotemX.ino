@@ -3,8 +3,7 @@
 #include <FastLED.h>
 #include "animations.hpp"
 #include "dataDict.hpp"
-#include "servoAnimation.hpp"
-#include "Servo.h"
+#include "DCMotor.hpp"
 
 //#define MOTOR_DISABLE
 #define LEDS_INNER 36
@@ -17,10 +16,6 @@ LedStrip ledsInner(&leds[0], LEDS_INNER);
 LedStrip ledsOuter(&leds[LEDS_INNER], LEDS_OUTER);
 LedStrip ledsAll(&leds[0], LEDS_OUTER + LEDS_INNER);
 DataDict stateMutator;
-
-Servo motorFront;
-Servo motorBack;
-DualServoAnimation servoAnimation(88, 97, 75, 95);
 
 // void sendCommand(const char *cmd)
 // {
@@ -40,8 +35,7 @@ struct AppState {
 	int pause;
 	int colorOverride;
 	int rotationOverride;
-	int frontSpeed;
-	int backSpeed;
+	int motorSpeed;
 } state;
 
 void ResetAppState()
@@ -53,8 +47,7 @@ void ResetAppState()
 	stateMutator.AddEntry('x', sizeof(state.rotationOverride), &state.rotationOverride);
 	stateMutator.AddEntry('o', sizeof(state.off), &state.off);
 	stateMutator.AddEntry('p', sizeof(state.pause), &state.pause);
-	stateMutator.AddEntry('f', sizeof(state.frontSpeed), &state.frontSpeed);
-	stateMutator.AddEntry('b', sizeof(state.backSpeed), &state.backSpeed);
+	stateMutator.AddEntry('f', sizeof(state.motorSpeed), &state.motorSpeed);
 
 	state.color = CRGB(CHSV(93, 255, 20));
 	state.animation = -1;
@@ -63,8 +56,7 @@ void ResetAppState()
 	state.colorOverride = 0;
 	state.off = 0;
 	state.pause = 0;
-	state.frontSpeed = 90;
-	state.backSpeed = 90;
+	state.motorSpeed = 255;
 	return;
 }
 
@@ -139,6 +131,21 @@ AniRainbow aniRainbow(&ledsInner, &ledsOuter);
 AniSparkle aniSparkle(&ledsAll);
 AniConfetti aniConfetti(&ledsAll);
 
+DCMotor motor(PB0, PB5, PB4);
+AniServo aniServo(&motor);
+
+int motorPosition;
+void encoderISR()
+{
+  int a = digitalRead(PB3);
+  int b = digitalRead(PA15);
+  if((a > 0 && b > 0) || (a == 0 && b == 0)){
+    motor.position++;
+  } else{
+    motor.position--;
+  }
+}
+
 void setup()
 {
 	Serial.begin(9600);
@@ -159,13 +166,10 @@ void setup()
 	registerAnimation(&aniSparkle, MODE_EXTEND);
 	registerAnimation(&aniConfetti, MODE_EXTEND);
 
+	attachInterrupt(digitalPinToInterrupt(PB3), encoderISR, RISING);
+
 	curTime = millis();
 	lastSwapTime = curTime;
-
-	#ifndef MOTOR_DISABLE
-	motorFront.attach(PA1);
-	motorBack.attach(PA0);
-	#endif
 	ResetAppState();
 }
 
@@ -202,9 +206,16 @@ void runAnimation(Animation *a)
 
 void loop()
 {
+	static int i = 0;
 	int minDelay = 16;
 	curTime = millis();
 	parseCommand();
+
+	// if (position != encoder.getPosition())
+	// {
+	// 	position = encoder.getPosition();
+	// }
+	//
 
 	int a = (state.animation == -1) ? getLoopAnimation() : state.animation;
 	if (a < NUM_ANIMATIONS && aniList.animation[a])
@@ -220,13 +231,13 @@ void loop()
 
 	#ifndef MOTOR_DISABLE
 	if (state.rotationOverride) {
-		motorFront.write(state.frontSpeed);
-		motorBack.write(state.backSpeed);
-	}
-	else {
-		servoAnimation.Draw(curTime);
-		motorFront.write(servoAnimation.val[0]);
-		motorBack.write(servoAnimation.val[1]);
+		motor.SetSpeed(state.motorSpeed/255.0f);
+	} else {
+		if (i > 6) {
+			aniServo.Draw(curTime);
+			i = 0;
+		}
+		i++;
 	}
 	#endif
 
