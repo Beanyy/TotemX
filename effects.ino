@@ -4,13 +4,26 @@
 void EffectParticle::Draw(LedStrip *strip)
 {
     int p = this->Progress();
+    CHSV color = (this->forceColor) ? forceColorHsv : colorHsv;
 
     int offset = mapFloat(p, 0, this->duration, 0, strip->Size());
     strip->SetDir(reverse).SetOffset(offset).SetWrap(true).SetViewport(0, strip->Size());
     if (gradient)
-        strip->DrawGradient(hueBegin, hue, streakSize);
+        strip->DrawGradient(color, color.h + hueLength, streakSize);
     else
-        strip->DrawStreak(streakSize, hue, reverse, 255);
+        strip->DrawStreak(color, streakSize, false);
+}
+
+void EffectParticle2::Draw(LedStrip *strip)
+{
+    int p = this->Progress();
+    CHSV color = (this->forceColor) ? forceColorHsv : colorHsv;
+
+    int offset = mapFloat(p, 0, this->duration, 0, strip->Size());
+    strip->SetDir(reverse).SetOffset(offset).SetWrap(true).SetViewport(0, strip->Size());
+
+    CHSV endColor = CHSV(color.h + offsetH, color.s + offsetS, color.v + offsetV);
+    strip->DrawLerp(color, endColor, streakSize);
 }
 
 void EffectRainbow::Draw(LedStrip *strip)
@@ -20,25 +33,25 @@ void EffectRainbow::Draw(LedStrip *strip)
     if (!mode)
         strip->DrawColor(CHSV(hueOffset, 255, 100));
     else
-        strip->DrawRandom(10);
+        strip->DrawRandom(60);
 }
 
 void EffectTheater::Draw(LedStrip *strip)
 {
     const int skip = 3;
+    CRGB color = (this->forceColor) ? this->forceColorRgb : this->colorRgb;
     int idx = (this->Progress() / 50) % skip;
     strip->SetDir(true).SetOffset(0).SetWrap(false).SetViewport(0, strip->Size());
     for (int i = idx; i < strip->Size(); i += skip)
-        strip->SetLED(i, this->color);
+        strip->SetLED(i, color);
 }
 
 void EffectFlash::Draw(LedStrip *strip)
 {
     const int onDuration = 50;
-    const int nSegments = 12;
-    const int nFlashes = 2;
-
-    int stripSize = strip->Size()/nSegments;
+    int remainder = strip->Size() % nSegments;
+    // if (strip->Size() % nSegments)
+    //     stripSize += 1;
     int segment = 0;
     int offset = mapFloat(this->Progress(), 0, this->duration, 0, this->duration / onDuration);
     fadeToBlackBy(strip->Leds(), strip->Size(), 10);
@@ -46,49 +59,70 @@ void EffectFlash::Draw(LedStrip *strip)
     strip->SetDir(true).SetWrap(false);
     srand(seed);
     for (int i = 0; i < nFlashes; i++) {
+        int stripSize = strip->Size() / nSegments;
         for (int i = 0; i < offset; i++)
             segment = rand() % nSegments;
         
-        int ledOffset = segment * stripSize;
+        int ledOffset = 0;
+        for (size_t i = 0; i < segment; i++)
+            ledOffset += (i < remainder) ? stripSize + 1 : stripSize;
+        
+        if (segment < remainder)
+            stripSize += 1;
+
         strip->SetOffset(ledOffset).SetViewport(ledOffset, stripSize);
         strip->DrawColor(CHSV(offset * 144 + 256/nFlashes  * i, 255, 255));
     }
 }
 
+void EffectFill::Draw(LedStrip *strip)
+{
+    CHSV color = (this->forceColor) ? this->forceColorHsv : this->colorHsv;
+    strip->SetViewport(0, strip->Size()).DrawColor(color);
+}
+
 void EffectWipe::Draw(LedStrip *strip)
 {
+    CHSV color = (this->forceColor) ? this->forceColorHsv : this->colorHsv;
     float offset = mapFloat(this->Progress(), 0, this->duration, 0, strip->Size());
     if (invert)
-        strip->SetViewport(offset, strip->Size() - offset);
+        strip->SetViewport(offset + ledOffset, strip->Size() - offset);
     else
-        strip->SetViewport(0, offset);
-    strip->SetDir(true).SetOffset(0).SetWrap(true).DrawColor(this->color);
+        strip->SetViewport(ledOffset, offset);
+    strip->SetDir(true).SetOffset(0).SetWrap(true).DrawColor(color);
 }
 
 void EffectBreathe::Draw(LedStrip *strip)
 {
+    CHSV color = (this->forceColor) ? this->forceColorHsv : this->colorHsv;
     int brightness = mapFloat(this->Progress(), 0, this->duration, 0, 511);
     if (brightness > 255) 
-        brightness = 512 - brightness;
-    strip->SetDir(true).SetOffset(0).SetWrap(false).SetViewport(0, strip->Size()).DrawColor(CHSV(hue, 255, brightness));
+        brightness = 511 - brightness;
+    strip->SetDir(true).SetOffset(0).SetWrap(false).SetViewport(0, strip->Size()).DrawColor(CHSV(color.h, color.s, brightness));
 }
 
-#define PI 3.1415926535
 void EffectServoSine::Draw(DCMotor* motor)
 {
-    int radians = mapFloat(this->Progress(), 0, this->duration, 0, PI*2);
-    float firstTransitionPoint = this->duration / 4;
-    float holdPoint = this->duration / 2;
-    float secondTransitionPoint = this->duration * 3 / 4;
-    motor->SetSpeed(-20);
+    float transitionDuration = this->duration / 10;
+    float holdDuration = this->duration / 2  - transitionDuration;
 
-    // if (this->Progress()  < firstTransitionPoint) {
-    //     motor->SetSpeed(255);
-    // } else if (this->Progress()  < holdPoint){
-    //     motor->SetSpeed(mapFloat(this->Progress(), firstTransitionPoint, holdPoint, 255, -255));
-    // } else if (this->Progress()  < secondTransitionPoint){
-    //     motor->SetSpeed(-255);
-    // } else {
-    //     motor->SetSpeed(mapFloat(this->Progress(), secondTransitionPoint, this->duration, -255, 255));
-    // }
+    float firstTransitionPoint = holdDuration;
+    float holdPoint = firstTransitionPoint + transitionDuration;
+    float secondTransitionPoint = holdPoint + holdDuration;
+
+    if (this->Progress()  < firstTransitionPoint) {
+        motor->SetSpeed(255);
+    } else if (this->Progress()  < holdPoint){
+        motor->SetSpeed(mapFloat(this->Progress(), firstTransitionPoint, holdPoint, 255, -255));
+    } else if (this->Progress()  < secondTransitionPoint){
+        motor->SetSpeed(-255);
+    } else {
+        motor->SetSpeed(mapFloat(this->Progress(), secondTransitionPoint, this->duration, -255, 255));
+    }
+}
+
+void EffectServoLevel::Draw(DCMotor* motor)
+{
+    int level = min(mapFloat(this->Progress(), 0, this->duration, 0, mLevels), mLevels);
+    motor->SetLevel(mLevelOrder[level]);
 }

@@ -1,5 +1,6 @@
 #include "LedStrip.hpp"
 #include "helpers.hpp"
+#include <FastLED.h>
 #ifdef SIMULATOR
 #include <stdlib.h>
 #endif
@@ -13,6 +14,7 @@ LedStrip::LedStrip(CRGB *leds_, int nLeds_) : leds(leds_),
                                               nLeds(nLeds_)
 {
     Reset();
+    Clear();
 }
 
 int LedStrip::CalcViewport(int pos)
@@ -79,6 +81,12 @@ LedStrip &LedStrip::SetDir(bool f)
     return *this;
 }
 
+LedStrip &LedStrip::SetBlendMode(BlendMode mode)
+{
+    blendMode = mode;
+    return *this;
+}
+
 LedStrip &LedStrip::SetLED(int pos, CRGB color)
 {
     int element = pos + offset;
@@ -99,7 +107,21 @@ LedStrip &LedStrip::SetLED(int pos, CRGB color)
 
     if (frac == 256)
     {
-        leds[element] = color;
+        if (blendMode == BLEND_MODE_NONE) {
+          leds[element] = color;
+        } else if (blendMode == BLEND_MODE_HALF) {
+          leds[element].r = (leds[element].r * 128 + color.r * 128) / 256;
+          leds[element].g = (leds[element].g * 128 + color.g * 128) / 256;
+          leds[element].b = (leds[element].b * 128 + color.b * 128) / 256;
+        } else if (blendMode == BLEND_MODE_ADD) {
+          leds[element].r = min(leds[element].r + color.r, 255);
+          leds[element].g = min(leds[element].g + color.g, 255);
+          leds[element].b = min(leds[element].b + color.b, 255);
+        } else if (blendMode == BLEND_MODE_MAXIMUM) {
+          leds[element].r = max(color.r, leds[element].r);
+          leds[element].g = max(color.g, leds[element].g);
+          leds[element].b = max(color.b, leds[element].b);
+        }
     }
     else if (frac > 0)
     {
@@ -116,8 +138,8 @@ LedStrip &LedStrip::Reset()
     SetOffset(0);
     SetWrap(false);
     SetDir(true);
-    for (int i = 0; i < nLeds; i++)
-        leds[i] = CRGB::Black;
+    // for (int i = 0; i < nLeds; i++)
+    //     leds[i] = CRGB::Black;
     return *this;
 }
 
@@ -134,15 +156,28 @@ LedStrip &LedStrip::DrawColor(CRGB color)
     return *this;
 }
 
-LedStrip &LedStrip::DrawGradient(uint16_t hueStart, uint16_t hueEnd, int size)
+LedStrip &LedStrip::DrawGradient(CHSV color, uint16_t hueEnd, int size)
 {
-    if (hueStart > hueEnd)
+    if (color.h > hueEnd)
         hueEnd += 255;
         
     for (int i = 0; i < size; i++)
     {
-        uint8_t hue = lerp16by8(hueStart, hueEnd, 255 * i / (size - 1));
-        SetLED(i, CHSV(hue, 255, 255));
+        uint8_t actualHue = lerp16by8(color.h, hueEnd, 255 * i / (size - 1));
+        SetLED(i, CHSV(actualHue, color.s, color.v));
+    }
+    return *this;
+}
+
+LedStrip &LedStrip::DrawLerp(CRGB colorStart, CRGB colorEnd, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        uint8_t frac = lerp8by8(0, 255, 255 * i / (size - 1));
+        uint8_t r = (colorStart.r * (255 - frac) + colorEnd.r * frac) / 255;
+        uint8_t g = (colorStart.g * (255 - frac) + colorEnd.g * frac) / 255;
+        uint8_t b = (colorStart.b * (255 - frac) + colorEnd.b * frac) / 255;
+        SetLED(i, CRGB(r,g,b));
     }
     return *this;
 }
@@ -152,7 +187,7 @@ LedStrip &LedStrip::DrawRandom(int num)
     for (uint8_t i = 0; i < num; i++)
     {
         uint8_t pos = rand() % nLeds;
-        SetLED(pos, CHSV(rand(), 255, 128));
+        SetLED(pos, CHSV(rand(), 255, 255));
     }
     return *this;
 }
@@ -170,15 +205,16 @@ LedStrip &LedStrip::DrawTriangle(int size, uint8_t hue)
     return *this;
 }
 
-LedStrip &LedStrip::DrawStreak(int size, uint8_t hue, bool fowards, unsigned char brightness)
+LedStrip &LedStrip::DrawStreak(CHSV color, int size, bool fowards)
 {
     for (int i = 0; i < size; i++)
     {
-        CRGB color = CHSV(hue, 255, brightness * (size - i) / size);
-        SetLED(fowards ? i : -i, color);
+        CRGB actualColor = CHSV(color.h, color.s, color.v * (size - i) / size);
+        SetLED(fowards ? i : -i, actualColor);
     }
     return *this;
 }
+
 
 static void Swap(CRGB *a, CRGB *b)
 {

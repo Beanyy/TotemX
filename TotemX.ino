@@ -6,9 +6,9 @@
 #include "DCMotor.hpp"
 
 //#define MOTOR_DISABLE
-#define LEDS_INNER 36
-#define LEDS_OUTER 112
-#define NUM_ANIMATIONS 7
+#define LEDS_INNER 35
+#define LEDS_OUTER 113
+#define NUM_ANIMATIONS 12
 
 WS2812B strip = WS2812B(LEDS_INNER + LEDS_OUTER);
 CRGB leds[LEDS_INNER + LEDS_OUTER];
@@ -51,12 +51,13 @@ void ResetAppState()
 
 	state.color = CRGB(CHSV(93, 255, 20));
 	state.animation = -1;
+	//state.animation = 7;
 	state.speed = 128;
 	state.rotationOverride = 0;
 	state.colorOverride = 0;
 	state.off = 0;
 	state.pause = 0;
-	state.motorSpeed = 255;
+	state.motorSpeed = 0;
 	return;
 }
 
@@ -69,7 +70,10 @@ void executeCommand(char *cmd)
 	}
 	else if (cmd[0] == 'C') {
 		long hexColor = strtol(&cmd[1], NULL, 16);
-		CRGB color = CRGB(hexColor & 0xFF, hexColor & 0xFF00 >> 8, hexColor & 0xFF0000 >> 16);
+		unsigned char blue = hexColor & 0xFF;
+		unsigned char green = (hexColor & 0xFF00) >> 8;
+		unsigned char red = (hexColor & 0xFF0000) >> 16;
+		CRGB color = CRGB(red>>1, green>>1, blue>>1);
 		stateMutator.SetEntry(cmd[0], &color);
 	}
 	else {
@@ -130,8 +134,13 @@ AniZoom aniZoom(&ledsInner, &ledsOuter);
 AniRainbow aniRainbow(&ledsInner, &ledsOuter);
 AniSparkle aniSparkle(&ledsAll);
 AniConfetti aniConfetti(&ledsAll);
+AniBreathe aniBreathe(&ledsAll);
+AniFill aniFill(&ledsAll);
+AniMultiParticle aniMultiParticle(&ledsInner, &ledsOuter);
+AniFire<LEDS_OUTER> aniFire(&ledsInner, &ledsOuter);
+AniWheel aniWheel(&ledsInner, &ledsOuter);
 
-DCMotor motor(PB0, PB5, PB4);
+DCMotor motor(PB0, PB4, PB5);
 AniServo aniServo(&motor);
 
 int motorPosition;
@@ -161,10 +170,15 @@ void setup()
 	registerAnimation(&aniWipe, MODE_EXTEND);
 	registerAnimation(&aniFlash, MODE_EXTEND);
 	registerAnimation(&aniParticle, MODE_EXTEND);
+	registerAnimation(&aniMultiParticle, MODE_EXTEND);
 	registerAnimation(&aniZoom, MODE_EXTEND);
 	registerAnimation(&aniRainbow, MODE_EXTEND);
 	registerAnimation(&aniSparkle, MODE_EXTEND);
 	registerAnimation(&aniConfetti, MODE_EXTEND);
+	registerAnimation(&aniBreathe, MODE_EXTEND);
+	// registerAnimation(&aniFill, MODE_EXTEND);
+	registerAnimation(&aniFire, MODE_EXTEND);
+	registerAnimation(&aniWheel, MODE_EXTEND);
 
 	attachInterrupt(digitalPinToInterrupt(PB3), encoderISR, RISING);
 
@@ -188,12 +202,17 @@ int getLoopAnimation()
 			} while (aniList.mode[aniList.current] == MODE_SKIP);
 		}
 	}
+  return aniList.current;
 }
 
 void runAnimation(Animation *a)
 {
-	if (state.colorOverride)
-		a->ColorOverride(state.color);
+	if (state.colorOverride) {
+		CHSV colorHsv = RgbToHsv(state.color);
+		a->ColorOverride(state.color, colorHsv);
+	} else {
+		a->DisableColorOverride();
+	}
 
 	if (state.pause)
 		a->Pause();
@@ -207,17 +226,19 @@ void runAnimation(Animation *a)
 void loop()
 {
 	static int i = 0;
+	static int lastAnimation = -1;
 	int minDelay = 16;
 	curTime = millis();
 	parseCommand();
 
-	// if (position != encoder.getPosition())
-	// {
-	// 	position = encoder.getPosition();
-	// }
-	//
-
 	int a = (state.animation == -1) ? getLoopAnimation() : state.animation;
+	if (a != lastAnimation) {
+		ledsInner.Reset();
+		ledsOuter.Reset();
+		ledsAll.Reset();
+	}
+	lastAnimation = a;
+
 	if (a < NUM_ANIMATIONS && aniList.animation[a])
 		runAnimation(aniList.animation[a]);
 
@@ -231,7 +252,7 @@ void loop()
 
 	#ifndef MOTOR_DISABLE
 	if (state.rotationOverride) {
-		motor.SetSpeed(state.motorSpeed/255.0f);
+		motor.SetSpeed(state.motorSpeed);
 	} else {
 		if (i > 6) {
 			aniServo.Draw(curTime);

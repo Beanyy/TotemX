@@ -18,7 +18,7 @@ private:
 
     float kp = 2;
     float kd = 0.025;
-    float ki = 0.1;
+    float ki = 0.0;
     void setMotor(int dir, int pwmVal)
     {
         analogWrite(mPwmPin,pwmVal);
@@ -45,20 +45,35 @@ public:
         pinMode(mPwmPin, OUTPUT);
         pinMode(mForwardPin, OUTPUT);
         pinMode(mReversePin, OUTPUT);
-        digitalWrite (PB5, 0);
-        digitalWrite (PB4, 0);
+        digitalWrite (mForwardPin, 0);
+        digitalWrite (mReversePin, 0);
     };
 
+    void SetLevel(int speedLevel)
+    {
+        bool reverse = false;
+        if (!speedLevel) {
+            SetSpeed(0);
+            return;
+        }
+        if (speedLevel < 0) {
+            reverse = true;
+            speedLevel = speedLevel * -1;
+        }
+
+        float targetSpeed = 40 + speedLevel * 35;
+        targetSpeed = min(targetSpeed, 255);
+        targetSpeed = (reverse) ? targetSpeed * -1 : targetSpeed;
+        SetSpeed(targetSpeed);
+    };
     void SetSpeed(float targetSpeed)
     {
         unsigned long now = millis();
         float deltaTime = ((float) (now - prevTime))/( 1.0e3 );
         prevTime = now;
 
-        float speed = ((float)(position - lastPosition))/deltaTime;
+        float speed = ((float)(position - lastPosition))/deltaTime/8;
         lastPosition = position;
-        Serial.print(speed);
-        Serial.print(" ");
 
         int error = targetSpeed - speed;
         float derivative = (error-prevError)/(deltaTime);
@@ -79,12 +94,6 @@ public:
         if(u<0){
             dir = -1;
         }
-
-        Serial.print(targetSpeed);
-        Serial.print(" ");
-        Serial.print(pwr);
-        Serial.print(" ");
-        Serial.println(dir);
 
         setMotor(dir,pwr);
     };

@@ -2,7 +2,9 @@
 #define EFFECTS_HPP
 #include "effectBase.hpp"
 #include "DCMotor.hpp"
+
 #define BPM128 1875
+#define DEFAULT_BPM BPM128
 
 class EffectServo : public Effect
 {
@@ -14,7 +16,21 @@ class EffectServoSine : public EffectServo
 {
 public:
 	EffectServoSine() {
-		this->duration = BPM128*8;
+		this->duration = BPM128*25;
+	}
+	virtual void Draw(DCMotor* motor) override;
+};
+
+class EffectServoLevel : public EffectServo
+{
+	const int mLevelOrder[13] = {-1, 1, 1, -2, 1, 1, 2, -1, 2, -2, 1, 1, 1};
+	const int mLevels = sizeof(mLevelOrder)/sizeof(mLevelOrder[0]);
+	
+public:
+	
+	EffectServoLevel() {
+		const int mTimePerLevel = BPM128*6;
+		this->duration = mTimePerLevel * mLevels;
 	}
 	virtual void Draw(DCMotor* motor) override;
 };
@@ -29,8 +45,7 @@ class EffectParticle : public EffectStrip
 {
 public:
 	int streakSize;
-	unsigned char hue;
-	unsigned char hueBegin;
+	unsigned char hueLength;
 	bool reverse;
 	bool gradient;
 	EffectParticle() {
@@ -39,6 +54,22 @@ public:
 	}
 	virtual void Draw(LedStrip* strip) override;
 };
+
+class EffectParticle2 : public EffectStrip
+{
+public:
+	int streakSize;
+	bool reverse;
+	int offsetH;
+	int offsetS;
+	int offsetV;
+	EffectParticle2() {
+		this->duration = BPM128;
+		reverse = false;
+	}
+	virtual void Draw(LedStrip* strip) override;
+};
+
 
 class EffectTheater : public EffectStrip
 {
@@ -56,7 +87,7 @@ public:
 		this->duration = BPM128;
 	}
 	char invert;
-	int ledOffset;
+	int ledOffset = 0;
 	virtual void Draw(LedStrip* strip) override;
 };
 
@@ -75,8 +106,21 @@ class EffectFlash : public EffectStrip
 public:
   EffectFlash() {
     this->duration = BPM128*4;
+	nSegments = 12;
+	nFlashes = 2;
   }
   int seed;
+  int nSegments;
+  int nFlashes;
+  virtual void Draw(LedStrip* strip) override;
+};
+
+class EffectFill : public EffectStrip
+{
+public:
+  EffectFill() {
+    this->duration = BPM128;
+  }
   virtual void Draw(LedStrip* strip) override;
 };
 
