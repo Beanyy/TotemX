@@ -12,25 +12,20 @@ public:
 	virtual void Draw(DCMotor* motor) = 0;
 };
 
-class EffectServoSine : public EffectServo
-{
-public:
-	EffectServoSine() {
-		this->duration = BPM128*25;
-	}
-	virtual void Draw(DCMotor* motor) override;
-};
-
 class EffectServoLevel : public EffectServo
 {
-	const int mLevelOrder[13] = {-1, 1, 1, -2, 1, 1, 2, -1, 2, -2, 1, 1, 1};
-	const int mLevels = sizeof(mLevelOrder)/sizeof(mLevelOrder[0]);
-	
+	const int mSequence[17] = {-1, 1, 1,-2,
+								1, 1, 2,-1,
+								2,-2, 1, 1,
+								1,-1,-2, 2,
+								2};
+	const int mSequenceLen = sizeof(mSequence)/sizeof(mSequence[0]);
+	const int mTransitionTime = BPM128/2;
+	const int mTimePerLevel = BPM128*8;
+
 public:
-	
 	EffectServoLevel() {
-		const int mTimePerLevel = BPM128*6;
-		this->duration = mTimePerLevel * mLevels;
+		this->duration = mTimePerLevel * mSequenceLen;
 	}
 	virtual void Draw(DCMotor* motor) override;
 };

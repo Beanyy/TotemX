@@ -51,7 +51,6 @@ void ResetAppState()
 
 	state.color = CRGB(CHSV(93, 255, 20));
 	state.animation = -1;
-	//state.animation = 7;
 	state.speed = 128;
 	state.rotationOverride = 0;
 	state.colorOverride = 0;
@@ -176,7 +175,7 @@ void setup()
 	registerAnimation(&aniSparkle, MODE_EXTEND);
 	registerAnimation(&aniConfetti, MODE_EXTEND);
 	registerAnimation(&aniBreathe, MODE_EXTEND);
-	// registerAnimation(&aniFill, MODE_EXTEND);
+	registerAnimation(&aniFill, MODE_EXTEND);
 	registerAnimation(&aniFire, MODE_EXTEND);
 	registerAnimation(&aniWheel, MODE_EXTEND);
 

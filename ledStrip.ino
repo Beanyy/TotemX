@@ -160,7 +160,7 @@ LedStrip &LedStrip::DrawGradient(CHSV color, uint16_t hueEnd, int size)
 {
     if (color.h > hueEnd)
         hueEnd += 255;
-        
+
     for (int i = 0; i < size; i++)
     {
         uint8_t actualHue = lerp16by8(color.h, hueEnd, 255 * i / (size - 1));

@@ -62,11 +62,11 @@ void EffectFlash::Draw(LedStrip *strip)
         int stripSize = strip->Size() / nSegments;
         for (int i = 0; i < offset; i++)
             segment = rand() % nSegments;
-        
+
         int ledOffset = 0;
         for (size_t i = 0; i < segment; i++)
             ledOffset += (i < remainder) ? stripSize + 1 : stripSize;
-        
+
         if (segment < remainder)
             stripSize += 1;
 
@@ -96,33 +96,24 @@ void EffectBreathe::Draw(LedStrip *strip)
 {
     CHSV color = (this->forceColor) ? this->forceColorHsv : this->colorHsv;
     int brightness = mapFloat(this->Progress(), 0, this->duration, 0, 511);
-    if (brightness > 255) 
+    if (brightness > 255)
         brightness = 511 - brightness;
     strip->SetDir(true).SetOffset(0).SetWrap(false).SetViewport(0, strip->Size()).DrawColor(CHSV(color.h, color.s, brightness));
 }
 
-void EffectServoSine::Draw(DCMotor* motor)
-{
-    float transitionDuration = this->duration / 10;
-    float holdDuration = this->duration / 2  - transitionDuration;
-
-    float firstTransitionPoint = holdDuration;
-    float holdPoint = firstTransitionPoint + transitionDuration;
-    float secondTransitionPoint = holdPoint + holdDuration;
-
-    if (this->Progress()  < firstTransitionPoint) {
-        motor->SetSpeed(255);
-    } else if (this->Progress()  < holdPoint){
-        motor->SetSpeed(mapFloat(this->Progress(), firstTransitionPoint, holdPoint, 255, -255));
-    } else if (this->Progress()  < secondTransitionPoint){
-        motor->SetSpeed(-255);
-    } else {
-        motor->SetSpeed(mapFloat(this->Progress(), secondTransitionPoint, this->duration, -255, 255));
-    }
-}
-
 void EffectServoLevel::Draw(DCMotor* motor)
 {
-    int level = min(mapFloat(this->Progress(), 0, this->duration, 0, mLevels), mLevels);
-    motor->SetLevel(mLevelOrder[level]);
+    int sequencePos = min(mapFloat(this->Progress(), 0, this->duration, 0, mSequenceLen), mSequenceLen - 1);
+
+
+    int remainingLevelTime = mTimePerLevel - this->Progress() % mTimePerLevel;
+    float level;
+    if (mTransitionTime >= remainingLevelTime) {
+        int nextSequencePos = (sequencePos + 1) % mSequenceLen;
+        level = mapFloat(mTransitionTime - remainingLevelTime, 0, mTransitionTime, mSequence[sequencePos], mSequence[nextSequencePos]);
+    } else {
+        level = mSequence[sequencePos];
+    }
+
+    motor->SetLevel(level);
 }

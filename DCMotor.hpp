@@ -33,7 +33,7 @@ private:
         else{
             digitalWrite(mForwardPin,LOW);
             digitalWrite(mReversePin,LOW);
-        }  
+        }
     }
 public:
     int position = 0;
@@ -49,19 +49,15 @@ public:
         digitalWrite (mReversePin, 0);
     };
 
-    void SetLevel(int speedLevel)
+    void SetLevel(float speedLevel)
     {
         bool reverse = false;
-        if (!speedLevel) {
-            SetSpeed(0);
-            return;
-        }
         if (speedLevel < 0) {
             reverse = true;
             speedLevel = speedLevel * -1;
         }
 
-        float targetSpeed = 40 + speedLevel * 35;
+        float targetSpeed = (speedLevel >= 1)  ? 40 + speedLevel * 35 : 75 * speedLevel;
         targetSpeed = min(targetSpeed, 255);
         targetSpeed = (reverse) ? targetSpeed * -1 : targetSpeed;
         SetSpeed(targetSpeed);

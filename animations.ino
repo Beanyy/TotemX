@@ -12,11 +12,11 @@ void AniWipe::DrawImpl(unsigned long time)
 		hue += 144;
 
 	lastProgress = progress;
-	
+
 	wipe.colorHsv = CHSV(hue, 255, 255);
 	wipe.invert = 0;
 	unsigned char originalHue = wipe.forceColorHsv.h;
-	
+
 	wipe.ledOffset = 0;
 	wipe.Draw(outer);
 	wipe.ledOffset = inner->Size() - 4;
@@ -195,12 +195,12 @@ void AniFire<N>::DrawImpl(unsigned long time)
     for( int i = 0; i < outer->Size(); i++) {
 		heat[i] = qsub8( heat[i],  random8(0, ((cooling * 10) / outer->Size()) + 2));
     }
-  
+
     // Step 2.  Heat from each cell drifts 'up' and diffuses a little
     for( int k= outer->Size() - 1; k >= 2; k--) {
 		heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2] ) / 3;
     }
-    
+
     // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
     if( random8() < sparking ) {
 		int y = random8(7);
@@ -212,7 +212,7 @@ void AniFire<N>::DrawImpl(unsigned long time)
 		CRGB color = HeatColor(heat[j]);
 		CHSV chsvColor = RgbToHsv(color);
 		chsvColor.h += hueOffset*84;
-		outer->Leds()[j]= chsvColor; 
+		outer->Leds()[j]= chsvColor;
 		if (j%3 == 0)
 			inner->Leds()[j/3]= chsvColor;
     }
@@ -224,7 +224,7 @@ void AniWheel::DrawImpl(unsigned long time)
 	outer->Clear();
 	inner->Clear();
 	unsigned char hueOffset;
-	if (color.Progress() < color.duration / 2) 
+	if (color.Progress() < color.duration / 2)
 		hueOffset = mapFloat(color.Progress(), 0, color.duration, HUE_BLUE, 300);
 	else
 		hueOffset = mapFloat(color.Progress(), 0, color.duration, 300, HUE_BLUE);

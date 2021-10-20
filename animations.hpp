@@ -167,7 +167,7 @@ private:
     EffectParticle particle;
     Effect color;
     LedStrip *leds[2];
-    
+
 public:
     AniMultiParticle(LedStrip *inner, LedStrip *outer)
     {
@@ -190,7 +190,7 @@ private:
     uint8_t heat[N];
     Effect hueShift;
     uint8_t lastHueOffset;
-    
+
 public:
     AniFire(LedStrip *inner, LedStrip *outer) : inner(inner),
                                                   outer(outer)
@@ -226,14 +226,12 @@ public:
 class AniServo : public Animation
 {
 private:
-    EffectServoSine sineWave;
     EffectServoLevel servoLevel;
     DCMotor *motor;
 
 public:
     AniServo(DCMotor *motor) : motor(motor)
     {
-        this->AddEffect(&sineWave);
         this->AddEffect(&servoLevel);
     }
     virtual void DrawImpl(unsigned long time) override;
